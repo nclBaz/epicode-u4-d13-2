@@ -162,6 +162,37 @@ usersRouter.put(
   "/:userId/purchaseHistory/:productId",
   async (req, res, next) => {
     try {
+      // 1. Find user by id (obtaining a MONGOOSE DOCUMENT)
+      const user = await UsersModel.findById(req.params.userId)
+
+      if (user) {
+        // 2. Update the item in the array by using normal JS Code
+        // 2.1 Search for the index of the product into the purchaseHistory array
+        const index = user.purchaseHistory.findIndex(
+          book => book._id.toString() === req.params.productId
+        )
+
+        if (index !== -1) {
+          console.log({ ...user.purchaseHistory[index] })
+          // 2.2 Modify that product
+          user.purchaseHistory[index] = {
+            ...user.purchaseHistory[index].toObject(), // <-- THIS IS A SUBDOCUMENT (has a lot of strange properties), to spread it we have to first use .toObject()
+            ...req.body,
+          }
+
+          // 3. Since user object is a MONGOOSE DOCUMENT I can use .save() method to update that record
+          await user.save()
+          res.send(user)
+        } else {
+          next(
+            createHttpError(404, `Book with id ${req.body.bookId} not found!`)
+          )
+        }
+      } else {
+        next(
+          createHttpError(404, `User with id ${req.params.userId} not found!`)
+        )
+      }
     } catch (error) {
       next(error)
     }
@@ -172,6 +203,18 @@ usersRouter.delete(
   "/:userId/purchaseHistory/:productId",
   async (req, res, next) => {
     try {
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.params.userId, // WHO
+        { $pull: { purchaseHistory: { _id: req.params.productId } } }, // HOW
+        { new: true } // OPTIONS
+      )
+      if (updatedUser) {
+        res.send(updatedUser)
+      } else {
+        next(
+          createHttpError(404, `User with id ${req.params.userId} not found!`)
+        )
+      }
     } catch (error) {
       next(error)
     }
