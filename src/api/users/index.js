@@ -2,6 +2,7 @@ import e from "express"
 import express from "express"
 import createHttpError from "http-errors"
 import UsersModel from "./model.js"
+import BooksModel from "../books/model.js"
 
 const usersRouter = express.Router()
 
@@ -75,5 +76,82 @@ usersRouter.delete("/:userId", async (req, res, next) => {
     next(error)
   }
 })
+
+// ************************************************ EMBEDDED EXAMPLE **********************************************************
+
+usersRouter.post("/:userId/purchaseHistory", async (req, res, next) => {
+  try {
+    // We gonna receive a bookId in the req.body. Given that Id, we would like to insert the corresponding book into the purchaseHistory array
+
+    // 1. Find the book in the books' collection by id
+    const purchasedBook = await BooksModel.findById(req.body.bookId, { _id: 0 }) // here we could use projection {_id: 0} to remove the _id from the book. We should do this because in this way Mongo will automagically create a unique _id for every item in the array
+
+    if (purchasedBook) {
+      // 2. If the books is found --> add additional info like purchaseDate
+      const bookToInsert = {
+        ...purchasedBook.toObject(),
+        purchaseDate: new Date(),
+      } // purchasedBook (and EVERYTHING you get from .find .findById,... is a MONGOOSE DOCUMENT, therefore to spread it I shall convert it into a plain object)
+
+      console.log("BOOK TO INSERT: ", bookToInsert)
+
+      // 3. Update the specified user by adding that book to his/her purchaseHistory array
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.params.userId, // WHO
+        { $push: { purchaseHistory: bookToInsert } }, // HOW
+        { new: true, runValidators: true } // OPTIONS
+      )
+      if (updatedUser) {
+        res.send(updatedUser)
+      } else {
+        next(
+          createHttpError(404, `User with id ${req.params.userId} not found!`)
+        )
+      }
+    } else {
+      // 4. In case of book or user not found --> 404
+      next(createHttpError(404, `Book with id ${req.body.bookId} not found!`))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
+usersRouter.get("/:userId/purchaseHistory", async (req, res, next) => {
+  try {
+  } catch (error) {
+    next(error)
+  }
+})
+
+usersRouter.get(
+  "/:userId/purchaseHistory/:productId",
+  async (req, res, next) => {
+    try {
+    } catch (error) {
+      next(error)
+    }
+  }
+)
+
+usersRouter.put(
+  "/:userId/purchaseHistory/:productId",
+  async (req, res, next) => {
+    try {
+    } catch (error) {
+      next(error)
+    }
+  }
+)
+
+usersRouter.delete(
+  "/:userId/purchaseHistory/:productId",
+  async (req, res, next) => {
+    try {
+    } catch (error) {
+      next(error)
+    }
+  }
+)
 
 export default usersRouter
