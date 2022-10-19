@@ -3,6 +3,7 @@ import listEndpoints from "express-list-endpoints"
 import cors from "cors"
 import mongoose from "mongoose"
 import usersRouter from "./api/users/index.js"
+import booksRouter from "./api/books/index.js"
 import {
   badRequestHandler,
   genericErrorHandler,
@@ -18,6 +19,7 @@ server.use(express.json())
 
 // *************************************** ENDPOINTS ***************************************************
 server.use("/users", usersRouter)
+server.use("/books", booksRouter)
 
 // ************************************ ERROR HANDLERS *************************************************
 server.use(badRequestHandler)
